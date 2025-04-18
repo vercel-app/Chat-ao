@@ -16,6 +16,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <link rel="manifest" href="manifest.json" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chat Pro</title>
@@ -25,6 +26,136 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+      /* Estilo para o botão de logout */
+.logout-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 10px;
+    border-radius: 5px;
+    width: auto;
+}
+
+.logout-btn:hover {
+    color: #ff4757;
+    background-color: rgba(255, 71, 87, 0.1);
+    transform: translateY(-2px);
+}
+
+.logout-btn i {
+    margin-right: 5px;
+}
+
+/* Estilo para o modal de confirmação de logout */
+.logout-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.logout-modal.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.logout-modal-content {
+    background-color: rgba(10, 10, 40, 0.9);
+    width: 90%;
+    max-width: 400px;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 0 20px var(--primary-blue-glow);
+    transform: scale(0.9);
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.logout-modal.active .logout-modal-content {
+    transform: scale(1);
+}
+
+.logout-modal-title {
+    font-size: 1.4rem;
+    color: var(--accent-blue);
+    margin-bottom: 15px;
+}
+
+.logout-modal-message {
+    margin-bottom: 20px;
+    color: var(--text-color);
+}
+
+.logout-modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.cancel-logout-btn {
+    background-color: transparent;
+    border: 1px solid var(--primary-blue);
+    color: var(--text-color);
+    padding: 8px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: auto;
+}
+
+.cancel-logout-btn:hover {
+    background-color: rgba(0, 71, 171, 0.2);
+    transform: translateY(-2px);
+}
+
+.confirm-logout-btn {
+    background-color: #ff4757;
+    border: none;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: auto;
+}
+
+.confirm-logout-btn:hover {
+    background-color: #ff6b81;
+    transform: translateY(-2px);
+}
+
+/* Animação para logout */
+@keyframes fadeOutUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+.logout-animation {
+    animation: fadeOutUp 0.5s forwards;
+}
         :root {
             --primary-dark: #0d0d2b;
             --primary-blue: #0062ff;
@@ -1201,6 +1332,11 @@
     </footer>
 
     <script>
+      if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js')
+      .then(() => console.log('Service Worker registrado com sucesso'))
+      .catch(error => console.log('Erro ao registrar Service Worker:', error));
+  }
         // Criar as partículas mágicas
         document.addEventListener('DOMContentLoaded', function() {
             const particlesContainer = document.getElementById('particles');
@@ -1314,6 +1450,19 @@
         <!-- Settings Modal -->
         <div class="modal" id="settingsModal">
             <div class="modal-content">
+              <button class="logout-btn" id="logout-btn">
+    <i class="fas fa-sign-out-alt"></i>
+</button><!-- Modal de Logout -->
+<div class="logout-modal" id="logout-modal">
+    <div class="logout-modal-content">
+        <h3 class="logout-modal-title">Encerrar Sessão</h3>
+        <p class="logout-modal-message">Tem certeza que deseja sair do Chat Pro?</p>
+        <div class="logout-modal-buttons">
+            <button class="cancel-logout-btn" id="cancel-logout-btn">Cancelar</button>
+            <button class="confirm-logout-btn" id="confirm-logout-btn">Sair</button>
+        </div>
+    </div>
+</div>
                 <i class="fas fa-times modal-close" id="closeSettingsBtn"></i>
                 <h3 class="modal-title">Configurações</h3>
                 <div class="settings-tabs">
@@ -2029,6 +2178,109 @@
                 element.addEventListener('click', playButtonSound);
             });
         });
+    // Elementos do logout
+const logoutBtn = document.getElementById('logout-btn');
+const logoutModal = document.getElementById('logout-modal');
+const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
+const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
+
+// Função para encerrar a sessão
+function logout() {
+    // Atualizar status online para offline
+    if (currentUser) {
+        db.collection('users').doc(currentUser.uid).update({
+            isOnline: false,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            // Adicionar animação de saída
+            chatContainer.classList.add('logout-animation');
+            
+            setTimeout(() => {
+                // Fazer logout no Firebase
+                auth.signOut().then(() => {
+                    // Redefinir variáveis
+                    currentUser = null;
+                    currentChat = "global";
+                    adminMode = false;
+                    userReactions = {};
+                    
+                    // Mostrar tela de login
+                    chatContainer.classList.remove('logout-animation');
+                    loginContainer.style.display = 'flex';
+                    registerContainer.style.display = 'none';
+                    chatContainer.style.display = 'none';
+                    
+                    // Fechar modal
+                    logoutModal.classList.remove('active');
+                    
+                    // Mostrar notificação
+                    showNotification('Até logo!', 'Você saiu do Chat Pro com sucesso.');
+                    playSound('notification');
+                }).catch((error) => {
+                    showNotification('Erro', 'Falha ao sair: ' + error.message);
+                });
+            }, 500);
+        }).catch((error) => {
+            showNotification('Erro', 'Falha ao atualizar status: ' + error.message);
+        });
+    }
+}
+
+// Event listeners para logout
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        playSound('button');
+        logoutModal.classList.add('active');
+    });
+}
+
+if (cancelLogoutBtn) {
+    cancelLogoutBtn.addEventListener('click', () => {
+        playSound('button');
+        logoutModal.classList.remove('active');
+    });
+}
+
+if (confirmLogoutBtn) {
+    confirmLogoutBtn.addEventListener('click', () => {
+        playSound('button');
+        logout();
+    });
+}
+
+// Fechar modal ao clicar fora
+window.addEventListener('click', (e) => {
+    if (e.target === logoutModal) {
+        logoutModal.classList.remove('active');
+    }
+});
+
+// Adicionar evento para encerrar sessão ao fechar a página
+window.addEventListener('beforeunload', () => {
+    if (currentUser) {
+        // Atualizar status para offline sem esperar confirmação
+        db.collection('users').doc(currentUser.uid).update({
+            isOnline: false,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+});
+
+// Tratamento para retorno de foco na página
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && currentUser) {
+        // Atualizar status para online quando voltar à página
+        db.collection('users').doc(currentUser.uid).update({
+            isOnline: true
+        });
+    } else if (document.visibilityState === 'hidden' && currentUser) {
+        // Atualizar status para offline quando sair da página
+        db.collection('users').doc(currentUser.uid).update({
+            isOnline: false,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
+});
     </script>
 </body>
 </html>
