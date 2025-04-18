@@ -1189,6 +1189,21 @@
                 flex: 100%;
             }
         }
+      /* Adicione este CSS ao seu arquivo de estilos */
+.logout-btn {
+    background-color: transparent;
+    border: none;
+    color: var(--accent-blue);
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-left: auto;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    color: var(--text-color);
+    transform: scale(1.1);
+}
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -1320,6 +1335,10 @@
                     <div class="tab active" data-tab="profile">Perfil</div>
                     <div class="tab" data-tab="themes">Temas</div>
                     <div class="tab" data-tab="banned">Usuários Banidos</div>
+                  <!-- Adicione este botão dentro da div user-profile -->
+<button id="logoutBtn" class="logout-btn">
+    <i class="fas fa-sign-out-alt"></i>
+</button>
                 </div>
 
                 <div class="tab-content active" id="profileTab">
@@ -2029,6 +2048,33 @@
                 element.addEventListener('click', playButtonSound);
             });
         });
+    // Adicione o event listener para o botão de logout
+logoutBtn.addEventListener('click', () => {
+    playButtonSound();
+    showLoading();
+    
+    // Atualizar status online para false antes de fazer logout
+    userRef.update({
+        isOnline: false,
+        lastActive: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then(() => {
+        // Fazer logout
+        auth.signOut()
+            .then(() => {
+                hideLoading();
+                showNotification('Sucesso', 'Sessão terminada com sucesso!');
+            })
+            .catch((error) => {
+                hideLoading();
+                showNotification('Erro', 'Falha ao terminar sessão: ' + error.message);
+            });
+    })
+    .catch((error) => {
+        hideLoading();
+        showNotification('Erro', 'Falha ao atualizar status: ' + error.message);
+    });
+});
     </script>
 </body>
 </html>
