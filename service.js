@@ -2,7 +2,7 @@ self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open('chatao-cache').then(function(cache) {
       return cache.addAll([
-        'chatao.html',
+        'index.html',
         'manifest.json',
         'style.css',
         'script.js',
