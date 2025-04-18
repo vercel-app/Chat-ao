@@ -1271,8 +1271,6 @@
             }
         });
     </script>
-</body>
-</html>
 
     </div>
 
@@ -1302,7 +1300,7 @@
             <div class="main-content">
                 <div class="chat-header">
                     <div class="current-chat-info">
-                        <img src="icon.png" alt="Chat Icon">
+                        <img src="avatar.png" alt="Chat Icon">
                         <div>
                             <div class="current-chat-name">Chat Ao</div>
                         </div>
@@ -1310,9 +1308,7 @@
                     <div class="chat-actions">
                         <i class="fas fa-cog action-icon" id="settingsBtn"></i>
                     </div>
-                </div>
-
-                <div class="messages-container" id="messagesContainer">
+                </di><div class="messages-container" id="messagesContainer">
                     <div class="global-chat-label">Chat Ao</div>
                     <!-- Messages will be populated here -->
                 </div>
@@ -2123,6 +2119,13 @@ if ('serviceWorker' in navigator) {
     });
 }
     </script>
+      <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service.js')
+      .then(() => console.log('Service Worker registrado com sucesso'))
+      .catch(error => console.log('Erro ao registrar Service Worker:', error));
+  }
+</script>
 </body>
 </html>
 
