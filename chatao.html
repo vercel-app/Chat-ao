@@ -2281,6 +2281,39 @@ document.addEventListener('visibilitychange', () => {
         });
     }
 });
+    Firebase
+document.addEventListener('DOMContentLoaded', () => {
+    // Inicializar apenas os serviços necessários de imediato
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    
+    // Mostrar interface de login imediatamente
+    hideLoading();
+    
+    // Carregar outros serviços apenas quando necessário
+    let db = null;
+    let storage = null;
+    
+    function getFirestore() {
+        if (!db) db = firebase.firestore();
+        return db;
+    }
+    
+    function getStorage() {
+        if (!storage) storage = firebase.storage();
+        return storage;
+    }
+    
+    // Atualizar referências nas funções existentes
+});
+
+// 2. Adicionar timeout para esconder o loading automaticamente
+setTimeout(() => {
+    hideLoading();
+}, 5000); // 5 segundos máximo de loading
+
+// 3. Adicionar feedback visual imediato
+loadingScreen.innerHTML += '<div style="margin-top: 20px; color: white; text-align: center;"></div>';
     </script>
 </body>
 </html>
